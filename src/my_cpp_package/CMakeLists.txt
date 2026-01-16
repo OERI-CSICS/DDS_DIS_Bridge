@@ -10,11 +10,31 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # Generate messages
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ShipEntityState.msg"
   DEPENDENCIES std_msgs
+)
+
+# Create ship simulation library
+add_library(ship_simulation
+  src/simulation/ecs/Entity.cpp
+  src/simulation/LatLonTypes.cpp
+  src/simulation/LatLonSimulation.cpp
+)
+
+target_include_directories(ship_simulation PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_compile_features(ship_simulation PUBLIC cxx_std_20)
+
+target_link_libraries(ship_simulation
+  spdlog::spdlog
 )
 
 add_executable(talker_node src/talker_node.cpp)
@@ -57,10 +77,14 @@ add_executable(ship_publisher src/ship_publisher.cpp)
 target_include_directories(ship_publisher PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(ship_publisher PUBLIC c_std_99 cxx_std_17)
+target_compile_features(ship_publisher PUBLIC c_std_99 cxx_std_20)
 ament_target_dependencies(ship_publisher rclcpp std_msgs)
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(ship_publisher "${cpp_typesupport_target}")
+target_link_libraries(ship_publisher
+  "${cpp_typesupport_target}"
+  ship_simulation
+  yaml-cpp
+)
 
 # DDS to DIS bridge executable  
 add_executable(dds_dis_bridge src/dds_dis_bridge.cpp)
@@ -79,6 +103,15 @@ target_include_directories(dis_receiver_test PUBLIC
   ../open-dis-cpp/src)
 target_compile_features(dis_receiver_test PUBLIC c_std_99 cxx_std_17)
 target_link_libraries(dis_receiver_test OpenDIS6)
+
+# Install the library
+install(TARGETS ship_simulation
+  EXPORT ship_simulationTargets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
 
 install(TARGETS
   publisher

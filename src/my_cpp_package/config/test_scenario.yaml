@@ -1,0 +1,38 @@
+# Test Scenario: Single ship moving at 2 knots
+# Location: Near Isle of Wight / Portsmouth, UK
+# 50°48'34.9"N 1°17'15.6"W
+
+ships:
+  # HMS Test Vessel - Slow patrol ship
+  - entity_id: 5001
+    name: "HMS Test Vessel"
+    force_id: 1  # Blue force
+
+    # Initial position: 50°48'34.9"N 1°17'15.6"W
+    # Converted to decimal degrees:
+    # Latitude:  50 + (48/60) + (34.9/3600) = 50.809694°
+    # Longitude: -(1 + (17/60) + (15.6/3600)) = -1.287667°
+    initial_position:
+      latitude: 50.809694
+      longitude: -1.287667
+      altitude: 0.0
+
+    # Velocity: 2 knots heading east
+    # 2 knots = 2 * 1.852 km/h = 3.704 km/h = 1.029 m/s
+    # Heading: 90° (due east)
+    velocity:
+      north_ms: 0.0      # No north/south movement
+      east_ms: 1.029     # 2 knots eastward
+      up_ms: 0.0
+
+    orientation:
+      heading: 90.0      # 90 degrees = Due East
+      pitch: 0.0
+      roll: 0.0
+
+    waypoints:
+      enabled: false
+      loop: false
+      tolerance_m: 100.0
+      cruise_speed_ms: 1.029
+      points: []

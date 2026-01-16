@@ -1,0 +1,92 @@
+# Ship simulation configuration
+# Defines initial ship states and waypoint navigation parameters
+
+ships:
+  # USS Enterprise - Blue force carrier
+  - entity_id: 1001
+    name: "USS Enterprise"
+    force_id: 1  # 1 = Blue force
+
+    # Initial position (Norfolk, VA area)
+    initial_position:
+      latitude: 36.8970
+      longitude: -76.0230
+      altitude: 0.0
+
+    # Velocity in m/s (North/South, East/West, Up/Down)
+    velocity:
+      north_ms: 5.0   # 5 m/s northward
+      east_ms: 5.0    # 5 m/s eastward
+      up_ms: 0.0      # No vertical movement
+
+    # Orientation in degrees
+    orientation:
+      heading: 45.0   # 45 degrees (NE)
+      pitch: 0.0
+      roll: 0.0
+
+    # Waypoint navigation (optional)
+    waypoints:
+      enabled: false      # Set to true to activate waypoint following
+      loop: false         # Set to true to loop back to first waypoint
+      tolerance_m: 100.0  # Distance in meters to consider waypoint "reached"
+      cruise_speed_ms: 10.0  # Speed when navigating waypoints
+      points: []          # List of waypoints (lat, lon, alt)
+        # Example waypoint format:
+        # - latitude: 37.0
+        #   longitude: -76.0
+        #   altitude: 0.0
+
+  # USS Nimitz - Blue force carrier
+  - entity_id: 1002
+    name: "USS Nimitz"
+    force_id: 1  # 1 = Blue force
+
+    initial_position:
+      latitude: 36.9000
+      longitude: -76.0000
+      altitude: 0.0
+
+    velocity:
+      north_ms: 0.0
+      east_ms: 8.0    # 8 m/s eastward
+      up_ms: 0.0
+
+    orientation:
+      heading: 90.0   # 90 degrees (E)
+      pitch: 0.0
+      roll: 0.0
+
+    waypoints:
+      enabled: false
+      loop: false
+      tolerance_m: 100.0
+      cruise_speed_ms: 10.0
+      points: []
+
+  # Red Destroyer - Red force surface combatant
+  - entity_id: 2001
+    name: "Red Destroyer"
+    force_id: 2  # 2 = Red force
+
+    initial_position:
+      latitude: 37.0000
+      longitude: -75.8000
+      altitude: 0.0
+
+    velocity:
+      north_ms: -3.0  # 3 m/s southward
+      east_ms: -3.0   # 3 m/s westward
+      up_ms: 0.0
+
+    orientation:
+      heading: 225.0  # 225 degrees (SW)
+      pitch: 0.0
+      roll: 0.0
+
+    waypoints:
+      enabled: false
+      loop: false
+      tolerance_m: 100.0
+      cruise_speed_ms: 10.0
+      points: []

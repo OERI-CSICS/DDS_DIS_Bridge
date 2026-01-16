@@ -1,0 +1,8 @@
+conda deactivate
+source install/setup.bash
+ros2 run my_cpp_package dds_dis_bridge
+ros2 run my_cpp_package ship_publisher --ros-args -p config_file:=$(pwd)/src/my_cpp_package/config/test_scenario.yaml
+
+or
+
+ros2 run my_cpp_package ship_publisher
