@@ -30,7 +30,7 @@ public:
   : Node("dds_dis_bridge")
   {
     // Declare parameters with defaults
-    this->declare_parameter<std::string>("dis_address", "127.0.0.1");  // Loopback by default
+    this->declare_parameter<std::string>("dis_address", "10.253.140.255");  // eno1 broadcast
     this->declare_parameter<int>("dis_port", 3000);
     this->declare_parameter<double>("position_threshold_meters", 10.0);
     this->declare_parameter<bool>("use_multicast", false);  // Disabled by default for loopback
@@ -61,6 +61,12 @@ private:
       return;
     }
 
+    // Enable broadcast
+    int broadcast_enable = 1;
+    if (setsockopt(socket_fd_, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
+      RCLCPP_WARN(this->get_logger(), "Failed to enable SO_BROADCAST");
+    }
+
     // Get parameters
     auto dis_address = this->get_parameter("dis_address").as_string();
     auto dis_port = this->get_parameter("dis_port").as_int();
@@ -80,7 +86,7 @@ private:
       }
     }
     
-    RCLCPP_INFO(this->get_logger(), "UDP socket configured for DIS transmission to %s:%d (multicast: %s)", 
+    RCLCPP_INFO(this->get_logger(), "UDP socket configured for DIS transmission to %s:%ld (multicast: %s)",
                 dis_address.c_str(), dis_port, use_multicast ? "enabled" : "disabled");
   }
 
@@ -162,13 +168,16 @@ private:
     // Set force ID
     entity_pdu.setForceId(msg.force_id);
     
-    // Convert lat/lon to cartesian coordinates (simplified)
+    // Convert geodetic (lat/lon/alt) to DIS ECEF coordinates (WGS84)
+    const double a  = 6378137.0;           // WGS84 semi-major axis (meters)
+    const double e2 = 0.00669437999014;    // WGS84 first eccentricity squared
+    double lat_rad = msg.latitude  * M_PI / 180.0;
+    double lon_rad = msg.longitude * M_PI / 180.0;
+    double N = a / sqrt(1.0 - e2 * sin(lat_rad) * sin(lat_rad));
     DIS::Vector3Double position;
-    // For this example, we'll use a simple conversion
-    // In a real implementation, you'd want proper geodetic conversion
-    position.setX(msg.longitude * 111320.0 * cos(msg.latitude * M_PI / 180.0));
-    position.setY(msg.latitude * 111320.0);
-    position.setZ(msg.altitude);
+    position.setX((N + msg.altitude) * cos(lat_rad) * cos(lon_rad));
+    position.setY((N + msg.altitude) * cos(lat_rad) * sin(lon_rad));
+    position.setZ((N * (1.0 - e2) + msg.altitude) * sin(lat_rad));
     entity_pdu.setEntityLocation(position);
     
     // Set orientation 
@@ -178,11 +187,14 @@ private:
     orientation.setPhi(msg.roll * M_PI / 180.0);
     entity_pdu.setEntityOrientation(orientation);
     
-    // Set velocity
+    // Convert velocity from local ENU (east/north/up) to ECEF (WGS84)
+    double v_east  = msg.velocity_x;
+    double v_north = msg.velocity_y;
+    double v_up    = msg.velocity_z;
     DIS::Vector3Float velocity;
-    velocity.setX(msg.velocity_x);
-    velocity.setY(msg.velocity_y);
-    velocity.setZ(msg.velocity_z);
+    velocity.setX(-sin(lon_rad)*v_east - sin(lat_rad)*cos(lon_rad)*v_north + cos(lat_rad)*cos(lon_rad)*v_up);
+    velocity.setY( cos(lon_rad)*v_east - sin(lat_rad)*sin(lon_rad)*v_north + cos(lat_rad)*sin(lon_rad)*v_up);
+    velocity.setZ( cos(lat_rad)*v_north + sin(lat_rad)*v_up);
     entity_pdu.setEntityLinearVelocity(velocity);
     
     // Set dead reckoning parameters
